@@ -11,15 +11,15 @@ class Neighbor(models.Model):
     description   = models.CharField(max_length=500, blank=True)
 
     # IP Addresses
-    router_id     = models.CharField(max_length=150)
-    local_address = models.CharField(max_length=150)
-    peer_address  = models.CharField(max_length=150)
+    router_id     = models.GenericIPAddressField()
+    local_address = models.GenericIPAddressField()
+    peer_address  = models.GenericIPAddressField()
 
     passive       = models.BooleanField(default=False)
 
     # AS numbers
-    peer_as       = models.IntegerField()
-    local_as      = models.IntegerField()
+    peer_as       = models.PositiveIntegerField()
+    local_as      = models.PositiveIntegerField()
 
     enable        = models.BooleanField(default=True)
 
