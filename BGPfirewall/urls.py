@@ -5,6 +5,7 @@ from django.contrib import admin
 admin.autodiscover()
 
 urlpatterns = patterns('',
+    url(r'^neighbor/', include('neighbor.urls')),
     # Examples:
     # url(r'^$', 'BGPfirewall.views.home', name='home'),
     # url(r'^BGPfirewall/', include('BGPfirewall.foo.urls')),

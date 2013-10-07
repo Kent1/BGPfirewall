@@ -1,0 +1,9 @@
+{% if neighbors %}
+    <ul>
+    {% for neighbor in neighbors %}
+        <li><a href="/neighbor/{{ neighbor.id }}/">{{ neighbor.name }}</a></li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>No neighbors are configured.</p>
+{% endif %}
