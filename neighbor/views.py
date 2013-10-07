@@ -1,19 +1,16 @@
 from django.shortcuts import render, get_object_or_404
+from django.views import generic
 
 from neighbor.models import Neighbor
 
-def index(request):
-    """Index view of neighbor.
-    This view display a list of all configured neighbor.
-    """
+class ListView(generic.ListView):
+    """Index view."""
+    context_object_name = 'neighbors'
 
-    neighbors = Neighbor.objects.all()
-    context = {
-        'neighbors': neighbors,
-    }
-    return render(request, 'neighbor/index.html', context)
+    def get_queryset(self):
+        """Return all configured neighbors."""
+        return Neighbor.objects.all()
 
-def detail(request, neighbor_id):
-    """Detail view of a neighbor."""
-    neighbor = get_object_or_404(Neighbor, pk=neighbor_id)
-    return render(request, 'neighbor/detail.html', {'neighbor': neighbor})
+class DetailView(generic.DetailView):
+    """Detailled view of a given neighbor."""
+    model = Neighbor

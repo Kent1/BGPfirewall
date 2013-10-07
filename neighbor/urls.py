@@ -4,7 +4,7 @@ from neighbor import views
 
 urlpatterns = patterns('',
     # ex: /neighbor/
-    url(r'^$', views.index, name='index'),
+    url(r'^$', views.ListView.as_view(), name='index'),
     # ex: /neighbor/1/
-    url(r'^(?P<neighbor_id>\d+)/$', views.detail, name='detail')
+    url(r'^(?P<pk>\d+)/$', views.DetailView.as_view(), name='detail')
 )
