@@ -1,11 +1,8 @@
 from django.db import models
 
-
 class Neighbor(models.Model):
 
-    """This class represents a neighbor in BGP.
-    It inherits from Neighbor of ExaBGP.
-    """
+    """This class represents a neighbor in BGP."""
 
     name          = models.CharField(max_length=50)
     description   = models.CharField(max_length=500, blank=True)
@@ -21,7 +18,7 @@ class Neighbor(models.Model):
     peer_as       = models.PositiveIntegerField()
     local_as      = models.PositiveIntegerField()
 
-    enable        = models.BooleanField(default=True)
+    enable        = models.BooleanField(default=False)
 
     def __unicode__(self):
         return self.name
