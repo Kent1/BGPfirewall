@@ -1,3 +1,8 @@
+"""
+Neighbor models
+
+Author: Quentin Loos <contact@quentinloos.be>
+"""
 from django.db import models
 
 
