@@ -4,6 +4,14 @@ Flow rule models
 Author: Quentin Loos <contact@quentinloos.be>
 """
 from django.db import models
+from multiselectfield.models import MultiSelectField
+
+FRAGMENTS = (
+    (1, "Don't fragment"),
+    (2, "Is a fragment"),
+    (4, "First fragment"),
+    (8, "Last fragment"),
+)
 
 
 class Flow(models.Model):
@@ -58,8 +66,8 @@ class Match(models.Model):
     tcp_flag      = models.ManyToManyField("TCPFlag", blank=True, null=True, verbose_name="TCP flag")
     packet_length = models.ManyToManyField("PacketLength", blank=True, null=True)
     dscp          = models.ManyToManyField("DSCP", blank=True, null=True, verbose_name="DSCP")
-    fragment      = models.ManyToManyField("Fragment", blank=True, null=True)
-
+    #fragment      = models.ManyToManyField("Fragment", blank=True, null=True)
+    fragment      = MultiSelectField(max_length=250, blank=True, choices=FRAGMENTS)
 
 class Then(models.Model):
 
