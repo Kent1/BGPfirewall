@@ -33,14 +33,14 @@ class Flow(models.Model):
     )
 
     name         = models.CharField(max_length=50)
+    description  = models.TextField(null=True)
+
     # TODO user
 
     filed        = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
     status       = models.IntegerField(choices=ROUTE_STATUS, default=PENDING)
-
     expires      = models.DateField()
-    comments     = models.TextField(null=True)
 
     match        = models.OneToOneField("Match")
     then         = models.OneToOneField("Then")
