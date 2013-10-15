@@ -11,4 +11,4 @@ def autoregister(*app_list):
             except AlreadyRegistered:
                 pass
 
-autoregister('flowspec')
+autoregister('flow')
