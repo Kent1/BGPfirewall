@@ -6,6 +6,7 @@ admin.autodiscover()
 
 urlpatterns = patterns('',
     url(r'^neighbor/', include('neighbor.urls')),
+    url(r'^flow/', include('flow.urls')),
     # Examples:
     # url(r'^$', 'BGPfirewall.views.home', name='home'),
     # url(r'^BGPfirewall/', include('BGPfirewall.foo.urls')),

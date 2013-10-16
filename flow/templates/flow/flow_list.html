@@ -1,0 +1,9 @@
+{% if flows %}
+    <ul>
+    {% for flow in flows %}
+        <li><a href="/flow/{{ flow.id }}/">{{ flow.name }}</a></li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>No flows are configured.</p>
+{% endif %}
