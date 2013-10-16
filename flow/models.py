@@ -54,8 +54,8 @@ class Match(models.Model):
     """This class represents the "match" condition of a BGP flow spec."""
 
     # TODO Add a correct field or model for IP prefix.
-    destination   = models.CharField("Destination IP Address", max_length=43)
-    source        = models.CharField("Source IP Address", max_length=43)
+    destination   = models.CharField("Destination IP Address", max_length=43, blank=True, null=True)
+    source        = models.CharField("Source IP Address", max_length=43, blank=True, null=True)
     protocol      = models.ManyToManyField("Protocol", blank=True, null=True)
     port          = models.ManyToManyField("Port", blank=True, null=True, related_name="port")
     dest_port     = models.ManyToManyField("Port", blank=True, null=True, related_name="destport")
