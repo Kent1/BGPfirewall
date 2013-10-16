@@ -6,8 +6,6 @@ Author: Quentin Loos <contact@quentinloos.be>
 from django.db import models
 from multiselectfield.models import MultiSelectField
 
-from flow import TCPFlag, Fragment
-
 
 class Flow(models.Model):
 
@@ -50,9 +48,6 @@ class Match(models.Model):
 
     destination = models.CharField("Destination IP Address", max_length=43, blank=True, null=True)
     source      = models.CharField("Source IP Address", max_length=43, blank=True, null=True)
-
-    tcp_flag    = MultiSelectField("TCP flag", max_length=3, choices=TCPFlag.TCP_FLAGS, blank=True, null=True)
-    fragment    = MultiSelectField(max_length=250, blank=True, choices=Fragment.FRAGMENTS)
 
 class Then(models.Model):
 
@@ -108,7 +103,7 @@ class Protocol(models.Model):
     protocol = models.IntegerField(choices=PROTOCOLS)
 
     def __unicode__(self):
-        return self.protocol
+        return self.get_protocol_display()
 
 
 class Port(models.Model):
@@ -189,3 +184,51 @@ class ICMPCode(models.Model):
 
     icmp_type = models.ForeignKey(ICMPType)
     icmp_code = models.SmallIntegerField(max_length=255)
+
+class TCPFlag(models.Model):
+
+    """TCP flag like SYN or ACK.
+
+        0   1   2   3   4   5   6   7   8   9   10  11  12  13  14  15
+      +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+
+      |               |                       | U | A | P | R | S | F |
+      | Header Length |        Reserved       | R | C | S | S | Y | I |
+      |               |                       | G | K | H | T | N | N |
+      +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+
+    """
+
+    TCP_FLAGS = (
+        (1, "FIN"),
+        (2, "SYN"),
+        (4, "RST"),
+        (8, "PUSH"),
+        (16, "ACK"),
+        (32, "URGENT"),
+    )
+
+    match    = models.ForeignKey(Match)
+    tcp_flag = models.SmallIntegerField(max_length=32, choices=TCP_FLAGS)
+
+    def __unicode__(self):
+        return self.get_tcp_flag_display()
+
+
+class Fragment(models.Model):
+
+    DONTFRAGMENT  = 1
+    ISAFRAGMENT   = 2
+    FIRSTFRAGMENT = 4
+    LASTFRAGMENT  = 8
+
+    FRAGMENTS = (
+        (DONTFRAGMENT, "Don't fragment"),
+        (ISAFRAGMENT, "Is a fragment"),
+        (FIRSTFRAGMENT, "First fragment"),
+        (LASTFRAGMENT, "Last fragment"),
+    )
+
+    match    = models.ForeignKey(Match)
+    fragment = models.SmallIntegerField(max_length=8, choices=FRAGMENTS)
+
+    def __unicode__(self):
+        return self.get_fragment_display()
