@@ -6,12 +6,7 @@ Author: Quentin Loos <contact@quentinloos.be>
 from django.db import models
 from multiselectfield.models import MultiSelectField
 
-FRAGMENTS = (
-    (1, "Don't fragment"),
-    (2, "Is a fragment"),
-    (4, "First fragment"),
-    (8, "Last fragment"),
-)
+from flow import TCPFlag, Fragment
 
 
 class Flow(models.Model):
@@ -53,21 +48,11 @@ class Match(models.Model):
 
     """This class represents the "match" condition of a BGP flow spec."""
 
-    # TODO Add a correct field or model for IP prefix.
-    destination   = models.CharField("Destination IP Address", max_length=43, blank=True, null=True)
-    source        = models.CharField("Source IP Address", max_length=43, blank=True, null=True)
-    protocol      = models.ManyToManyField("Protocol", blank=True, null=True)
-    port          = models.ManyToManyField("Port", blank=True, null=True, related_name="port")
-    dest_port     = models.ManyToManyField("Port", blank=True, null=True, related_name="destport")
-    src_port      = models.ManyToManyField("Port", blank=True, null=True, related_name="srcport")
-    icmp_type     = models.ManyToManyField("ICMPType", blank=True, null=True, verbose_name="ICMP Type")
-    icmp_code     = models.ManyToManyField("ICMPCode", blank=True, null=True, verbose_name="ICMP Code")
-    # TODO Use OpBitmask like the RFC for TCP flag and DSCP
-    tcp_flag      = models.ManyToManyField("TCPFlag", blank=True, null=True, verbose_name="TCP flag")
-    packet_length = models.ManyToManyField("PacketLength", blank=True, null=True)
-    dscp          = models.ManyToManyField("DSCP", blank=True, null=True, verbose_name="DSCP")
-    #fragment      = models.ManyToManyField("Fragment", blank=True, null=True)
-    fragment      = MultiSelectField(max_length=250, blank=True, choices=FRAGMENTS)
+    destination = models.CharField("Destination IP Address", max_length=43, blank=True, null=True)
+    source      = models.CharField("Source IP Address", max_length=43, blank=True, null=True)
+
+    tcp_flag    = MultiSelectField("TCP flag", max_length=3, choices=TCPFlag.TCP_FLAGS, blank=True, null=True)
+    fragment    = MultiSelectField(max_length=250, blank=True, choices=Fragment.FRAGMENTS)
 
 class Then(models.Model):
 
@@ -92,40 +77,15 @@ class Then(models.Model):
     )
 
     action = models.IntegerField(choices=THEN)
-    value  = models.IntegerField()
+    value  = models.IntegerField(blank=True, null=True)
 
-class OpValue(models.Model):
-
-    """Abstract class for modeling an octet operator or value like defined
-    in RFC 5575.
-
-      0   1   2   3   4   5   6   7
-    +---+---+---+---+---+---+---+---+
-    | e | a |  len  | 0 |lt |gt |eq |
-    +---+---+---+---+---+---+---+---+
-    """
-
-    EQ = 1
-    LT = 2
-    GT = 3
-    LE = 4
-    GE = 5
-
-    OPERATORS = (
-        (EQ, "="),
-        (LT, "<"),
-        (GT, ">"),
-        (LE, "<="),
-        (GE, ">="),
-    )
-
-    operator = models.IntegerField(choices=OPERATORS)
-
-    class Meta:
-        abstract = True
+    def __unicode__(self):
+        return self.get_action_display() + ' ' + str(self.value)
 
 
-class Protocol(OpValue):
+class Protocol(models.Model):
+
+    """Protocol model."""
 
     PROTOCOLS = (
         (1, "ICMP"),
@@ -144,39 +104,58 @@ class Protocol(OpValue):
         (132, "SCTP"),
     )
 
+    match    = models.ForeignKey(Match)
     protocol = models.IntegerField(choices=PROTOCOLS)
 
     def __unicode__(self):
-        return self.get_operator_display() + self.get_protocol_display()
+        return self.protocol
 
 
-class Port(OpValue):
+class Port(models.Model):
 
-    port_number = models.IntegerField(max_length=65536)
+    """Port model.
+    You can specify if it is the source port, the destination port or both.
+    """
+
+    SRC  = 1
+    DST  = 2
+    BOTH = 3
+
+    DIRECTION = (
+        (SRC, "Source port"),
+        (DST, "Destination port"),
+        (BOTH, "Source & destination ports"),
+    )
+
+    match       = models.ForeignKey(Match)
+    port_number = models.CharField(max_length=50)
+    direction   = models.IntegerField(choices=DIRECTION)
 
     def __unicode__(self):
-        return self.get_operator_display() + self.get_port_number_display()
+        return '%s (%s)' % (self.port_number, self.get_direction_display)
 
 
-class PacketLength(OpValue):
+class PacketLength(models.Model):
 
+    match         = models.ForeignKey(Match)
     packet_length = models.IntegerField(max_length=65536)
 
     def __unicode__(self):
         return self.get_operator_display() + self.get_packet_length_display()
 
 
-class DSCP(OpValue):
+class DSCP(models.Model):
 
-    dscp = models.IntegerField(max_length=64)
+    match = models.ForeignKey(Match)
+    dscp  = models.IntegerField(max_length=64)
 
     def __unicode__(self):
         return self.get_operator_display() + self.get_dscp_display()
 
 
-class ICMPType(OpValue):
+class ICMPType(models.Model):
 
-    """ICMP type class inherits from OpValue.
+    """ICMP Type
 
     A complete list can be found here : http://www.nthelp.com/icmp.html
     """
@@ -199,62 +178,14 @@ class ICMPType(OpValue):
         (18, "Address Mask Reply"),
     )
 
+    match     = models.ForeignKey(Match)
     icmp_type = models.IntegerField(max_length=255, choices=ICMP_TYPES)
 
     def __unicode__(self):
-        return self.get_operator_display() + self.get_icmp_type_display()
+        return '%s' % self.get_icmp_type_display()
 
 
-class ICMPCode(OpValue):
+class ICMPCode(models.Model):
 
-    """ICMP code class inherits from OpValue.
-
-    A complete list can be found here : http://www.nthelp.com/icmp.html
-    """
-
+    icmp_type = models.ForeignKey(ICMPType)
     icmp_code = models.SmallIntegerField(max_length=255)
-
-    def __unicode__(self):
-        return self.get_operator_display() + self.get_icmp_code_display()
-
-
-class TCPFlag(models.Model):
-
-    """TCP flag like SYN or ACK.
-
-        0   1   2   3   4   5   6   7   8   9   10  11  12  13  14  15
-      +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+
-      |               |                       | U | A | P | R | S | F |
-      | Header Length |        Reserved       | R | C | S | S | Y | I |
-      |               |                       | G | K | H | T | N | N |
-      +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+
-    """
-
-    TCP_FLAGS = (
-        (1, "FIN"),
-        (2, "SYN"),
-        (4, "RST"),
-        (8, "PUSH"),
-        (16, "ACK"),
-        (32, "URGENT"),
-    )
-
-    tcp_flag = models.SmallIntegerField(max_length=32, choices=TCP_FLAGS)
-
-    def __unicode__(self):
-        return self.get_tcp_flag_display()
-
-
-class Fragment(models.Model):
-
-    FRAGMENTS = (
-        (1, "Don't fragment"),
-        (2, "Is a fragment"),
-        (4, "First fragment"),
-        (8, "Last fragment"),
-    )
-
-    fragment = models.SmallIntegerField(max_length=8, choices=FRAGMENTS)
-
-    def __unicode__(self):
-        return self.get_fragment_display()
