@@ -4,7 +4,6 @@ Flow rule models
 Author: Quentin Loos <contact@quentinloos.be>
 """
 from django.db import models
-from multiselectfield.models import MultiSelectField
 
 
 class Flow(models.Model):
@@ -33,7 +32,7 @@ class Flow(models.Model):
     filed        = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
     status       = models.IntegerField(choices=ROUTE_STATUS, default=PENDING)
-    expires      = models.DateField()
+    expires      = models.DateTimeField()
 
     match        = models.OneToOneField("Match")
     then         = models.OneToOneField("Then")
@@ -48,6 +47,7 @@ class Match(models.Model):
 
     destination = models.CharField("Destination IP Address", max_length=43, blank=True, null=True)
     source      = models.CharField("Source IP Address", max_length=43, blank=True, null=True)
+
 
 class Then(models.Model):
 
@@ -184,6 +184,7 @@ class ICMPCode(models.Model):
 
     icmp_type = models.ForeignKey(ICMPType)
     icmp_code = models.SmallIntegerField(max_length=255)
+
 
 class TCPFlag(models.Model):
 
