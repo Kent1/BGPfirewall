@@ -6,9 +6,7 @@ Author: Quentin Loos <contact@quentinloos.be>
 from django.db import models
 
 
-class Flow(models.Model):
-
-    """This class represents a BGP flow specification (RFC 5575)."""
+class Route(object):
 
     ACTIVE   = 1
     ERROR    = 2
@@ -16,13 +14,39 @@ class Flow(models.Model):
     PENDING  = 4
     INACTIVE = 5
 
-    ROUTE_STATUS = (
+    STATUS = (
         (ACTIVE, "Active"),
         (ERROR, "Error"),
         (EXPIRED, "Expired"),
         (PENDING, "Pending"),
         (INACTIVE, "Inactive"),
     )
+
+
+class Then(object):
+
+    TRAFFICRATE    = 1
+    DISCARD        = 2
+    SAMPLE         = 3
+    TERMINAL       = 4
+    SAMPLETERMINAL = 5
+    REDIRECT       = 6
+    TRAFFICMARKING = 7
+
+    ACTIONS = (
+        (TRAFFICRATE, "Traffic-rate"),
+        (DISCARD, "Discard"),
+        (SAMPLE, "Sample"),
+        (TERMINAL, "Terminal"),
+        (SAMPLETERMINAL, "Sample & Terminal"),
+        (REDIRECT, "Redirect"),
+        (TRAFFICMARKING, "Traffic Marking"),
+    )
+
+
+class Flow(models.Model):
+
+    """This class represents a BGP flow specification (RFC 5575)."""
 
     name         = models.CharField(max_length=50)
     description  = models.TextField(null=True)
@@ -31,11 +55,15 @@ class Flow(models.Model):
 
     filed        = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
-    status       = models.IntegerField(choices=ROUTE_STATUS, default=PENDING)
+    status       = models.IntegerField(choices=Route.STATUS, default=Route.PENDING)
     expires      = models.DateTimeField()
 
+    # Match
     match        = models.OneToOneField("Match")
-    then         = models.OneToOneField("Then")
+
+    # Then
+    then         = models.IntegerField(choices=Then.ACTIONS)
+    then_value   = models.IntegerField(blank=True, null=True)
 
     def __unicode__(self):
         return self.name
@@ -47,35 +75,6 @@ class Match(models.Model):
 
     destination = models.CharField("Destination IP Address", max_length=43, blank=True, null=True)
     source      = models.CharField("Source IP Address", max_length=43, blank=True, null=True)
-
-
-class Then(models.Model):
-
-    """This class represents the "then" action of a BGP flow spec."""
-
-    TRAFFICRATE    = 1
-    DISCARD        = 2
-    SAMPLE         = 3
-    TERMINAL       = 4
-    SAMPLETERMINAL = 5
-    REDIRECT       = 6
-    TRAFFICMARKING = 7
-
-    THEN = (
-        (TRAFFICRATE, "Traffic-rate"),
-        (DISCARD, "Discard"),
-        (SAMPLE, "Sample"),
-        (TERMINAL, "Terminal"),
-        (SAMPLETERMINAL, "Sample & Terminal"),
-        (REDIRECT, "Redirect"),
-        (TRAFFICMARKING, "Traffic Marking"),
-    )
-
-    action = models.IntegerField(choices=THEN)
-    value  = models.IntegerField(blank=True, null=True)
-
-    def __unicode__(self):
-        return self.get_action_display() + ' ' + str(self.value)
 
 
 class Protocol(models.Model):
@@ -99,7 +98,7 @@ class Protocol(models.Model):
         (132, "SCTP"),
     )
 
-    match    = models.ForeignKey(Match)
+    flow     = models.ForeignKey(Match)
     protocol = models.IntegerField(choices=PROTOCOLS)
 
     def __unicode__(self):
@@ -122,7 +121,7 @@ class Port(models.Model):
         (BOTH, "Source & destination ports"),
     )
 
-    match       = models.ForeignKey(Match)
+    flow        = models.ForeignKey(Match)
     port_number = models.CharField(max_length=50)
     direction   = models.IntegerField(choices=DIRECTION)
 
@@ -132,7 +131,7 @@ class Port(models.Model):
 
 class PacketLength(models.Model):
 
-    match         = models.ForeignKey(Match)
+    flow          = models.ForeignKey(Match)
     packet_length = models.IntegerField(max_length=65536)
 
     def __unicode__(self):
@@ -141,16 +140,16 @@ class PacketLength(models.Model):
 
 class DSCP(models.Model):
 
-    match = models.ForeignKey(Match)
-    dscp  = models.IntegerField(max_length=64)
+    flow  = models.ForeignKey(Match)
+    dscp  = models.IntegerField("DSCP", max_length=64)
 
     def __unicode__(self):
         return self.get_operator_display() + self.get_dscp_display()
 
 
-class ICMPType(models.Model):
+class ICMP(models.Model):
 
-    """ICMP Type
+    """ICMP
 
     A complete list can be found here : http://www.nthelp.com/icmp.html
     """
@@ -173,18 +172,15 @@ class ICMPType(models.Model):
         (18, "Address Mask Reply"),
     )
 
-    match     = models.ForeignKey(Match)
-    icmp_type = models.IntegerField(max_length=255, choices=ICMP_TYPES)
+    flow      = models.ForeignKey(Match)
+    icmp_type = models.IntegerField("ICMP Type", max_length=255, choices=ICMP_TYPES)
+    icmp_code = models.SmallIntegerField("ICMP Code", max_length=255)
 
     def __unicode__(self):
-        return '%s' % self.get_icmp_type_display()
-
-
-class ICMPCode(models.Model):
-
-    icmp_type = models.ForeignKey(ICMPType)
-    icmp_code = models.SmallIntegerField(max_length=255)
-
+        if icmp_code:
+            return '%s (%s)' % (self.get_icmp_type_display(), self.icmp_code)
+        else:
+            return '%s' % self.get_icmp_type_display()
 
 class TCPFlag(models.Model):
 
@@ -207,8 +203,8 @@ class TCPFlag(models.Model):
         (32, "URGENT"),
     )
 
-    match    = models.ForeignKey(Match)
-    tcp_flag = models.SmallIntegerField(max_length=32, choices=TCP_FLAGS)
+    flow     = models.ForeignKey(Match)
+    tcp_flag = models.SmallIntegerField("TCP Flag", max_length=32, choices=TCP_FLAGS)
 
     def __unicode__(self):
         return self.get_tcp_flag_display()
@@ -228,7 +224,7 @@ class Fragment(models.Model):
         (LASTFRAGMENT, "Last fragment"),
     )
 
-    match    = models.ForeignKey(Match)
+    flow     = models.ForeignKey(Match)
     fragment = models.SmallIntegerField(max_length=8, choices=FRAGMENTS)
 
     def __unicode__(self):
