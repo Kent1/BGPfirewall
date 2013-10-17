@@ -12,4 +12,4 @@ class NeighborForm(forms.ModelForm):
 
     class Meta:
         model   = Neighbor
-        exclude = ('enable')
+        exclude = ['enable']

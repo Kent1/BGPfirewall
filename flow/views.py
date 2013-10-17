@@ -4,10 +4,8 @@ Views for flows
 Author: Quentin Loos <contact@quentinloos.be>
 """
 from django.views import generic
-from django.core.urlresolvers import reverse_lazy
 
 from flow.models import Flow
-from flow.forms import FlowForm
 
 
 class ListView(generic.ListView):
@@ -32,14 +30,3 @@ class DetailView(generic.DetailView):
     """
     model               = Flow
     context_object_name = 'flow'
-
-
-class CreateView(generic.CreateView):
-
-    """
-    Neighbor creating view.
-    Template: flow_create_form.html
-    """
-    model       = Flow
-    form_class  = FlowForm
-    success_url = reverse_lazy('index')
