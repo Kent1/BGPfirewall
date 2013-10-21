@@ -42,4 +42,4 @@ class CreateView(generic.CreateView):
     """
     model       = Neighbor
     form_class  = NeighborForm
-    success_url = reverse_lazy('index')
+    success_url = reverse_lazy('neighbor_list')
