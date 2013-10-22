@@ -13,5 +13,5 @@ urlpatterns = patterns('',
     # ex: /neighbor/1/
     url(r'^(?P<pk>\d+)/$', views.DetailView.as_view(), name='neighbor_detail'),
     # ex: /neighbor/create/
-    url(r'^create/$', views.CreateView.as_view(), name='neighbor_create')
+    url(r'^add/$', views.CreateView.as_view(), name='neighbor_add')
 )
