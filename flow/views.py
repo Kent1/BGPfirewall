@@ -13,8 +13,8 @@ from flow.forms import FlowForm
 class ListView(generic.ListView):
 
     """
-    Index view.
-    Template: flow_detail.html
+    List all current flows.
+    Template: flow_list.html
     """
     model               = Flow
     context_object_name = 'flows'
@@ -28,7 +28,7 @@ class DetailView(generic.DetailView):
 
     """
     Detailled view of a given flow.
-    Template: flow_list.html
+    Template: flow_detail.html
     """
     model               = Flow
     context_object_name = 'flow'
@@ -37,8 +37,8 @@ class DetailView(generic.DetailView):
 class CreateView(generic.CreateView):
 
     """
-    Neighbor creating view.
-    Template: neighbor_create_form.html
+    Flow creating view.
+    Template: flow_form.html
     """
     model       = Flow
     form_class  = FlowForm

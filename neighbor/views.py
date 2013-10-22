@@ -13,8 +13,8 @@ from neighbor.forms import NeighborForm
 class ListView(generic.ListView):
 
     """
-    Index view.
-    Template: neighbor_detail.html
+    list all current neighbors.
+    Template: neighbor_list.html
     """
     model               = Neighbor
     context_object_name = 'neighbors'
@@ -28,7 +28,7 @@ class DetailView(generic.DetailView):
 
     """
     Detailled view of a given neighbor.
-    Template: neighbor_list.html
+    Template: neighbor_detail.html
     """
     model               = Neighbor
     context_object_name = 'neighbor'
@@ -38,7 +38,7 @@ class CreateView(generic.CreateView):
 
     """
     Neighbor creating view.
-    Template: neighbor_create_form.html
+    Template: neighbor_form.html
     """
     model       = Neighbor
     form_class  = NeighborForm
