@@ -49,7 +49,7 @@ class Flow(models.Model):
     """This class represents a BGP flow specification (RFC 5575)."""
 
     name         = models.CharField(max_length=50)
-    description  = models.TextField(null=True)
+    description  = models.TextField(blank=True, null=True)
 
     # TODO user
 
@@ -181,6 +181,7 @@ class ICMP(models.Model):
             return '%s (%s)' % (self.get_icmp_type_display(), self.icmp_code)
         else:
             return '%s' % self.get_icmp_type_display()
+
 
 class TCPFlag(models.Model):
 

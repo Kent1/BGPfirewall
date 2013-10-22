@@ -11,7 +11,7 @@ class Neighbor(models.Model):
     """This class represents a neighbor in BGP."""
 
     name          = models.CharField(max_length=50)
-    description   = models.TextField(null=True)
+    description   = models.TextField(blank=True, null=True)
 
     # IP Addresses
     router_id     = models.GenericIPAddressField('Router ID')
