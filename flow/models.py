@@ -5,6 +5,8 @@ Author: Quentin Loos <contact@quentinloos.be>
 """
 from django.db import models
 
+import bgpspeaker
+
 
 class Route(object):
 
@@ -25,13 +27,13 @@ class Route(object):
 
 class Then(object):
 
-    TRAFFICRATE    = 1
-    DISCARD        = 2
-    SAMPLE         = 3
-    TERMINAL       = 4
-    SAMPLETERMINAL = 5
-    REDIRECT       = 6
-    TRAFFICMARKING = 7
+    TRAFFICRATE    = "rate-limit"
+    DISCARD        = "discard"
+    SAMPLE         = "action sample"
+    TERMINAL       = "action terminal"
+    SAMPLETERMINAL = "action sample-terminal"
+    REDIRECT       = "redirect"
+    TRAFFICMARKING = "mark"
 
     ACTIONS = (
         (TRAFFICRATE, "Traffic-rate"),
@@ -62,11 +64,27 @@ class Flow(models.Model):
     match        = models.OneToOneField("Match")
 
     # Then
-    then         = models.IntegerField(choices=Then.ACTIONS)
+    then         = models.CharField(max_length=30, choices=Then.ACTIONS)
     then_value   = models.IntegerField(blank=True, null=True)
 
     def __unicode__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        bgpspeaker.announce_flow(self.to_dictionary())
+        super(Flow, self).save(*args, **kwargs)
+
+    def to_dictionary(self):
+        dictionary = {}
+        dictionary['name'] = self.name
+        dictionary['description'] = self.description
+        dictionary.update(self.match.to_dictionary())
+        dictionary['then'] = self.get_then_display()
+        if(self.then == Then.TRAFFICRATE or
+           self.then == Then.REDIRECT or
+           self.then == Then.TRAFFICMARKING):
+            dictionary['then'] += ' ' + str(self.then_value)
+        return dictionary
 
 
 class Match(models.Model):
@@ -75,6 +93,20 @@ class Match(models.Model):
 
     destination = models.CharField("Destination IP Address", max_length=43, blank=True, null=True)
     source      = models.CharField("Source IP Address", max_length=43, blank=True, null=True)
+
+    def to_dictionary(self):
+        dictionary = {}
+        dictionary['source']        = self.source
+        dictionary['destination']   = self.destination
+        dictionary['protocol']      = [p.protocol for p in self.protocol_set.all()]
+        dictionary['port']          = self.port_set.all()
+        dictionary['packet-length'] = self.packetlength_set.all()
+        dictionary['dscp']          = self.dscp_set.all()
+        dictionary['icmp-type']     = [i.icmp_type for i in self.icmp_set.all()]
+        dictionary['icmp-code']     = [i.icmp_code for i in self.icmp_set.all()]
+        dictionary['tcp-flag']      = [t.tcp_flag for t in self.tcpflag_set.all()]
+        dictionary['fragment']      = [f.fragment for f in self.fragment_set.all()]
+        return dictionary
 
 
 class Protocol(models.Model):
@@ -111,9 +143,9 @@ class Port(models.Model):
     You can specify if it is the source port, the destination port or both.
     """
 
-    SRC  = 1
-    DST  = 2
-    BOTH = 3
+    SRC  = "source-port"
+    DST  = "destination-port"
+    BOTH = "port"
 
     DIRECTION = (
         (SRC, "Source port"),
@@ -126,7 +158,7 @@ class Port(models.Model):
     direction   = models.IntegerField(choices=DIRECTION)
 
     def __unicode__(self):
-        return '%s (%s)' % (self.port_number, self.get_direction_display)
+        return '%s %s' % (self.get_direction_display, self.port_number)
 
 
 class PacketLength(models.Model):
@@ -135,7 +167,7 @@ class PacketLength(models.Model):
     packet_length = models.IntegerField(max_length=65536)
 
     def __unicode__(self):
-        return self.get_operator_display() + self.get_packet_length_display()
+        return self.packet_length
 
 
 class DSCP(models.Model):
@@ -144,7 +176,7 @@ class DSCP(models.Model):
     dscp  = models.IntegerField("DSCP", max_length=64)
 
     def __unicode__(self):
-        return self.get_operator_display() + self.get_dscp_display()
+        return self.dscp
 
 
 class ICMP(models.Model):
