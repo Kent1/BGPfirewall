@@ -12,8 +12,6 @@ from models import *
 
 class ProtocolForm(forms.ModelForm):
 
-    protocol = forms.CheckboxSelectMultiple(choices=Protocol.PROTOCOLS)
-
     class Meta:
         model = Protocol
 
