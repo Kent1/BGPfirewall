@@ -1,4 +1,6 @@
 """
+Functions generating commands for ExaBGP and pass them to the socket.
+
 Author: Quentin Loos <contact@quentinloos.be>
 """
 
@@ -6,6 +8,12 @@ import exasocket
 
 
 def list_as_string(list):
+    """
+    Given a list, return a string representation of it
+
+    >>> list_as_string(['22', '80'])
+    [ 22 80 ]
+    """
     string = '[ '
     for element in list:
         string += str(element) + ' '
@@ -13,7 +21,13 @@ def list_as_string(list):
 
 
 def announce_flow(route, match, then):
-    """Announce BGP flow rule with param specified in args dictionary."""
+    """
+    Announce BGP flow rule with specified params to ExaBGP.
+
+    :param route: dictionnary with route parameters.
+    :param match: dictionnary with match components.
+    :param then: string representing the then action.
+    """
     announce = "announce flow route {\n"
 
     for key, value in route.items():

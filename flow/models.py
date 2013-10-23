@@ -81,6 +81,7 @@ class Flow(models.Model):
         super(Flow, self).save(*args, **kwargs)
 
     def to_dictionary(self):
+        """Return a dictionary representing the route."""
         route = {}
         route['name'] = self.name
         route['description'] = self.description
@@ -95,6 +96,7 @@ class Match(models.Model):
     source      = models.CharField("Source IP Address", max_length=43, blank=True, null=True)
 
     def to_dictionary(self):
+        """Return a dictionary including match components."""
         dictionary = {}
         dictionary['source']           = [self.source]
         dictionary['destination']      = [self.destination]
