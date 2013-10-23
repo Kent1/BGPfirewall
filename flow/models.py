@@ -71,20 +71,20 @@ class Flow(models.Model):
         return self.name
 
     def save(self, *args, **kwargs):
-        bgpspeaker.announce_flow(self.to_dictionary())
-        super(Flow, self).save(*args, **kwargs)
-
-    def to_dictionary(self):
-        dictionary = {}
-        dictionary['name'] = self.name
-        dictionary['description'] = self.description
-        dictionary.update(self.match.to_dictionary())
-        dictionary['then'] = self.get_then_display()
+        match = self.match.to_dictionary()
+        then = self.then
         if(self.then == Then.TRAFFICRATE or
            self.then == Then.REDIRECT or
            self.then == Then.TRAFFICMARKING):
-            dictionary['then'] += ' ' + str(self.then_value)
-        return dictionary
+            then += ' ' + str(self.then_value)
+        bgpspeaker.announce_flow(self.to_dictionary(), match, then)
+        super(Flow, self).save(*args, **kwargs)
+
+    def to_dictionary(self):
+        route = {}
+        route['name'] = self.name
+        route['description'] = self.description
+        return route
 
 
 class Match(models.Model):
@@ -96,16 +96,18 @@ class Match(models.Model):
 
     def to_dictionary(self):
         dictionary = {}
-        dictionary['source']        = self.source
-        dictionary['destination']   = self.destination
-        dictionary['protocol']      = [p.protocol for p in self.protocol_set.all()]
-        dictionary['port']          = self.port_set.all()
-        dictionary['packet-length'] = self.packetlength_set.all()
-        dictionary['dscp']          = self.dscp_set.all()
-        dictionary['icmp-type']     = [i.icmp_type for i in self.icmp_set.all()]
-        dictionary['icmp-code']     = [i.icmp_code for i in self.icmp_set.all()]
-        dictionary['tcp-flag']      = [t.tcp_flag for t in self.tcpflag_set.all()]
-        dictionary['fragment']      = [f.fragment for f in self.fragment_set.all()]
+        dictionary['source']           = [self.source]
+        dictionary['destination']      = [self.destination]
+        dictionary['protocol']         = [p.protocol for p in self.protocol_set.all()]
+        dictionary['port']             = [p.port_number for p in self.port_set.all().filter(direction=Port.BOTH)]
+        dictionary['source-port']      = [p.port_number for p in self.port_set.all().filter(direction=Port.SRC)]
+        dictionary['destination-port'] = [p.port_number for p in self.port_set.all().filter(direction=Port.DST)]
+        dictionary['packet-length']    = [p.packet_length for p in self.packetlength_set.all()]
+        dictionary['dscp']             = [d.dscp for d in self.dscp_set.all()]
+        dictionary['icmp-type']        = [i.icmp_type for i in self.icmp_set.all()]
+        dictionary['icmp-code']        = [i.icmp_code for i in self.icmp_set.all()]
+        dictionary['tcp-flag']         = [t.tcp_flag for t in self.tcpflag_set.all()]
+        dictionary['fragment']         = [f.fragment for f in self.fragment_set.all()]
         return dictionary
 
 
@@ -155,28 +157,28 @@ class Port(models.Model):
 
     flow        = models.ForeignKey(Match)
     port_number = models.CharField(max_length=50)
-    direction   = models.IntegerField(choices=DIRECTION)
+    direction   = models.CharField(max_length=50, choices=DIRECTION, default=BOTH)
 
     def __unicode__(self):
-        return '%s %s' % (self.get_direction_display, self.port_number)
+        return '%s' % self.port_number
 
 
 class PacketLength(models.Model):
 
     flow          = models.ForeignKey(Match)
-    packet_length = models.IntegerField(max_length=65536)
+    packet_length = models.CharField(max_length=65536)
 
     def __unicode__(self):
-        return self.packet_length
+        return '%s' % self.packet_length
 
 
 class DSCP(models.Model):
 
     flow  = models.ForeignKey(Match)
-    dscp  = models.IntegerField("DSCP", max_length=64)
+    dscp  = models.CharField("DSCP", max_length=64)
 
     def __unicode__(self):
-        return self.dscp
+        return '%s' % self.dscp
 
 
 class ICMP(models.Model):

@@ -5,30 +5,33 @@ Author: Quentin Loos <contact@quentinloos.be>
 import exasocket
 
 
-def announce_flow(args):
+def list_as_string(list):
+    string = '[ '
+    for element in list:
+        string += str(element) + ' '
+    return string + ']'
+
+
+def announce_flow(route, match, then):
     """Announce BGP flow rule with param specified in args dictionary."""
-    print args
-    announce = "announce flow route {\nmatch {\n"
-    if args['source']:
-        announce += "source %s;\n" % args['source']
-    if args['destination']:
-        announce += "destination %s;\n" % args['destination']
-    if args['port']:
-        announce += "%s;\n" % args['port']
-    if args['protocol']:
-        announce += "protocol %s;\n" % args['protocol']
-    if args['packet-length']:
-        announce += "packet-length %s;\n" % args['packet-length']
-    if args['dscp']:
-        announce += "dscp %s;\n" % args['dscp']
-    if args['icmp-type']:
-        announce += "icmp-type %s;\n" % args['icmp-type']
-    if args['icmp-code']:
-        announce += "icmp-code %s;\n" % args['icmp-code']
-    if args['tcp-flag']:
-        announce += "tcp-flags %s;\n" % args['tcp-flag']
-    if args['fragment']:
-        announce += "fragment %s;\n" % args['fragment']
-    announce += "}\nthen {\ndiscard;\n}\n}\n"""
+    announce = "announce flow route {\n"
+
+    for key, value in route.items():
+        if value:
+            announce += "%s %s;\n" % (key, value)
+
+    announce += "match {\n"
+
+    for key, value in match.items():
+        if value:
+            if len(value) == 1:
+                announce += "%s %s;\n" % (key, value[0])
+            else:
+                announce += "%s %s;\n" % (key, list_as_string(value))
+
+    announce += "}\nthen {\n"
+    announce += then
+    announce += ";\n}\n}\n"
+
     print announce
     exasocket.send(announce.replace('\n', '\\n'))
