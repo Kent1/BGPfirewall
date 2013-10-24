@@ -58,6 +58,7 @@ class Flow(models.Model):
     filed        = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
     status       = models.IntegerField(choices=Route.STATUS, default=Route.PENDING)
+    active       = models.BooleanField(default=False)
     expires      = models.DateTimeField()
 
     # Match
@@ -70,14 +71,21 @@ class Flow(models.Model):
     def __unicode__(self):
         return self.name
 
-    def save(self, *args, **kwargs):
+    def update_flow(self, withdraw=False):
+        """
+        Constructs parameter of BGP update to send and
+        send them to bgpspeaker.
+        """
         match = self.match.to_dictionary()
         then = self.then
         if(self.then == Then.TRAFFICRATE or
            self.then == Then.REDIRECT or
            self.then == Then.TRAFFICMARKING):
             then += ' ' + str(self.then_value)
-        bgpspeaker.announce_flow(self.to_dictionary(), match, then)
+        bgpspeaker.update_flow(self.to_dictionary(), match, then, withdraw)
+
+    def save(self, *args, **kwargs):
+        self.update_flow(not self.active)
         super(Flow, self).save(*args, **kwargs)
 
     def to_dictionary(self):

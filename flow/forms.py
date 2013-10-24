@@ -81,6 +81,7 @@ class FlowForm(forms.ModelForm):
             'name',
             'description',
             'expires',
+            'active',
             'source',
             'destination',
             'protocol',

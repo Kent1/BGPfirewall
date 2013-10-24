@@ -47,7 +47,7 @@ class MatchAdmin(admin.ModelAdmin):
 class FlowAdmin(admin.ModelAdmin):
     list_display = ('name', 'description', 'status')
     fieldsets = [
-        ('Route',  {'fields': ['name', 'description', 'expires']}),
+        ('Route',  {'fields': ['name', 'description', 'expires', 'active']}),
         ('Match',  {'fields': ['match']}),
         ('Then',   {'fields': ['then', 'then_value']}),
     ]
