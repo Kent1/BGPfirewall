@@ -20,32 +20,39 @@ def list_as_string(list):
     return string + ']'
 
 
-def announce_flow(route, match, then):
+def update_flow(route, match, then, withdraw=False):
     """
-    Announce BGP flow rule with specified params to ExaBGP.
+    Sends a BGP update containing flow rule with specified params
+    to the bgpspeaker.
 
     :param route: dictionnary with route parameters.
     :param match: dictionnary with match components.
     :param then: string representing the then action.
+    :param withdraw: Is the flow should be withdrawn ?
     """
-    announce = "announce flow route {\n"
+    announce = ''
+    if withdraw:
+        announce = 'withdraw'
+    else:
+        announce = 'announce'
+    announce +=  ' flow route {\n'
 
     for key, value in route.items():
         if value:
-            announce += "%s %s;\n" % (key, value)
+            announce += '%s %s;\n' % (key, value)
 
-    announce += "match {\n"
+    announce += 'match {\n'
 
     for key, value in match.items():
         if value:
             if len(value) == 1:
-                announce += "%s %s;\n" % (key, value[0])
+                announce += '%s %s;\n' % (key, value[0])
             else:
-                announce += "%s %s;\n" % (key, list_as_string(value))
+                announce += '%s %s;\n' % (key, list_as_string(value))
 
-    announce += "}\nthen {\n"
+    announce += '}\nthen {\n'
     announce += then
-    announce += ";\n}\n}\n"
+    announce += ';\n}\n}\n'
 
     print announce
     exasocket.send(announce.replace('\n', '\\n'))
