@@ -4,8 +4,12 @@ Flow rule models
 Author: Quentin Loos <contact@quentinloos.be>
 """
 from django.db import models
+from django.contrib.auth.models import User
+from django.utils import timezone
 
 import bgpspeaker
+import ipaddr
+import datetime
 
 
 class Route(object):
@@ -53,7 +57,7 @@ class Flow(models.Model):
     name         = models.CharField(max_length=50)
     description  = models.TextField(blank=True, null=True)
 
-    # TODO user
+    #applier      = models.ForeignKey(User, editable=False)
 
     filed        = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
@@ -82,11 +86,7 @@ class Flow(models.Model):
            self.then == Then.REDIRECT or
            self.then == Then.TRAFFICMARKING):
             then += ' ' + str(self.then_value)
-        bgpspeaker.update_flow(self.route(), self.match, then, withdraw)
-
-    def save(self, *args, **kwargs):
-        self.update_flow(not self.active)
-        super(Flow, self).save(*args, **kwargs)
+        bgpspeaker.update_flow(self.route(), self.match(), then, withdraw)
 
     def route(self):
         """Return a dictionary representing the route."""
@@ -98,8 +98,8 @@ class Flow(models.Model):
     def match(self):
         """Return a dictionary including match components."""
         match = {}
-        match['source']           = [self.source]
-        match['destination']      = [self.destination]
+        match['source']           = self.source
+        match['destination']      = self.destination
         match['protocol']         = [p.protocol for p in self.protocol_set.all()]
         match['port']             = [p.port_number for p in self.port_set.all().filter(direction=Port.BOTH)]
         match['source-port']      = [p.port_number for p in self.port_set.all().filter(direction=Port.SRC)]
@@ -111,6 +111,28 @@ class Flow(models.Model):
         match['tcp-flag']         = [t.tcp_flag for t in self.tcpflag_set.all()]
         match['fragment']         = [f.fragment for f in self.fragment_set.all()]
         return match
+
+    def save(self, *args, **kwargs):
+        if self.destination:
+            try:
+                address = ipaddr.IPNetwork(self.destination)
+                self.destination = address.exploded
+            except Exception:
+                raise ValidationError('Invalid network address format for destination component')
+        if self.source:
+            try:
+                address = ipaddr.IPNetwork(self.source)
+                self.source = address.exploded
+            except Exception:
+                raise ValidationError('Invalid network address format for source component')
+        self.update_flow(not self.active)
+        super(Flow, self).save(*args, **kwargs)
+
+    def has_expired(self):
+        print timezone.now()
+        if self.expires < timezone.now():
+            return True
+        return False
 
 
 class Protocol(models.Model):
