@@ -45,7 +45,9 @@ def update_flow(route, match, then, withdraw=False):
 
     for key, value in match.items():
         if value:
-            if len(value) == 1:
+            if isinstance(value, str):
+                announce += '%s %s;\n' % (key, value)
+            elif len(value) == 1:
                 announce += '%s %s;\n' % (key, value[0])
             else:
                 announce += '%s %s;\n' % (key, list_as_string(value))
