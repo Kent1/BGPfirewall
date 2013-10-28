@@ -77,22 +77,3 @@ class FlowForm(forms.ModelForm):
 
     class Meta:
         model = Flow
-        fields = [
-            'name',
-            'description',
-            'expires',
-            'active',
-            'source',
-            'destination',
-            'protocol',
-            'port_number',
-            'direction',
-            'packet_length',
-            'dscp',
-            'icmp_type',
-            'icmp_code',
-            'tcp_flag',
-            'fragment',
-            'then',
-            'then_value'
-        ]
