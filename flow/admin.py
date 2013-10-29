@@ -1,5 +1,6 @@
 from django.contrib import admin
 from flow.models import *
+from flow.forms import FlowForm
 
 
 class ProtocolInline(admin.StackedInline):
@@ -45,11 +46,12 @@ class FragmentInline(admin.StackedInline):
 
 class FlowAdmin(admin.ModelAdmin):
 
+    form = FlowForm
     list_display = ('name', 'description', 'status')
     fieldsets = [
         ('Route',  {'fields': ['name', 'description', 'expires', 'active']}),
+        ('Then',   {'fields': [('then', 'then_value')]}),
         ('Match',  {'fields': ['source', 'destination']}),
-        ('Then',   {'fields': ['then', 'then_value']}),
     ]
     inlines = [ProtocolInline, PortInline, PacketLengthInline, DSCPInline, ICMPInline, TCPFlagInline, FragmentInline]
 

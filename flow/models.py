@@ -6,6 +6,7 @@ Author: Quentin Loos <contact@quentinloos.be>
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
+from django.forms import ValidationError
 
 import bgpspeaker
 import ipaddr
@@ -113,18 +114,6 @@ class Flow(models.Model):
         return match
 
     def save(self, *args, **kwargs):
-        if self.destination:
-            try:
-                address = ipaddr.IPNetwork(self.destination)
-                self.destination = address.exploded
-            except Exception:
-                raise ValidationError('Invalid network address format for destination component')
-        if self.source:
-            try:
-                address = ipaddr.IPNetwork(self.source)
-                self.source = address.exploded
-            except Exception:
-                raise ValidationError('Invalid network address format for source component')
         self.update_flow(not self.active)
         super(Flow, self).save(*args, **kwargs)
 
