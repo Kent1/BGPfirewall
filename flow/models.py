@@ -11,6 +11,8 @@ from django.forms import ValidationError
 import bgpspeaker
 import ipaddr
 import datetime
+import logging
+logger = logging.getLogger('bgpspeaker')
 
 
 class Route(object):
@@ -62,13 +64,13 @@ class Flow(models.Model):
 
     filed        = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
-    status       = models.IntegerField(choices=Route.STATUS, default=Route.PENDING)
+    status       = models.IntegerField(choices=Route.STATUS, default=Route.INACTIVE)
     active       = models.BooleanField(default=False)
-    expires      = models.DateTimeField()
+    expires      = models.DateTimeField(default=timezone.now() + datetime.timedelta(days=1))
 
     # Match
     destination = models.CharField("Destination IP Address", max_length=43, blank=True, null=True)
-    source      = models.CharField("Source IP Address", max_length=43, blank=True, null=True)
+    source      = models.CharField("Source IP Address",  max_length=43, blank=True, null=True)
 
     # Then
     then         = models.CharField(max_length=30, choices=Then.ACTIONS)
@@ -87,7 +89,8 @@ class Flow(models.Model):
            self.then == Then.REDIRECT or
            self.then == Then.TRAFFICMARKING):
             then += ' ' + str(self.then_value)
-        bgpspeaker.update_flow(self.route(), self.match(), then, withdraw)
+        logger.info('Send flow informations to the BGP speaker.')
+        return bgpspeaker.update_flow(self.route(), self.match(), then, withdraw)
 
     def route(self):
         """Return a dictionary representing the route."""
@@ -114,7 +117,22 @@ class Flow(models.Model):
         return match
 
     def save(self, *args, **kwargs):
-        self.update_flow(not self.active)
+        if self.active:
+            if self.status == Route.INACTIVE or self.status == Route.ERROR:
+                # If we want to active the flow
+                if self.update_flow() == 0:
+                    # update_flow() exit code 0
+                    self.status = Route.ACTIVE
+                else:
+                    # update_flow() exit code -1
+                    self.status = Route.ERROR
+        else:
+            if self.status == Route.ACTIVE or self.status == Route.ERROR:
+                # If we want to desactive the flow
+                if self.update_flow(withdraw=True) == 0:
+                    self.status = Route.INACTIVE
+                else:
+                    self.status = Route.ERROR
         super(Flow, self).save(*args, **kwargs)
 
     def has_expired(self):

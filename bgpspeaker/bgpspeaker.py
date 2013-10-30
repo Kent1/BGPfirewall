@@ -5,7 +5,8 @@ Author: Quentin Loos <contact@quentinloos.be>
 """
 
 import exasocket
-
+import logging
+logger = logging.getLogger('bgpspeaker')
 
 def list_as_string(list):
     """
@@ -35,13 +36,7 @@ def update_flow(route, match, then, withdraw=False):
         announce = 'withdraw'
     else:
         announce = 'announce'
-    announce +=  ' flow route {\n'
-
-    for key, value in route.items():
-        if value:
-            announce += '%s %s;\n' % (key, value)
-
-    announce += 'match {\n'
+    announce +=  ' flow route {\nmatch {\n'
 
     for key, value in match.items():
         if value:
@@ -56,5 +51,7 @@ def update_flow(route, match, then, withdraw=False):
     announce += then
     announce += ';\n}\n}\n'
 
-    print announce
-    exasocket.send(announce.replace('\n', '\\n'))
+    announce = announce.replace('\n', '\\n')
+
+    logger.info('send configuration to the socket :\n' + announce)
+    return exasocket.send(announce)
