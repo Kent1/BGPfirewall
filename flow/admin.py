@@ -49,9 +49,24 @@ class FlowAdmin(admin.ModelAdmin):
     form = FlowForm
     list_display = ('name', 'description', 'status')
     fieldsets = [
-        ('Route',  {'fields': ['name', 'description', 'expires', 'active']}),
-        ('Then',   {'fields': [('then', 'then_value')]}),
-        ('Match',  {'fields': ['source', 'destination']}),
+        ('Route',
+            {
+                'description': '',
+                'fields': ['name', 'description', 'expires', 'active']
+            }
+        ),
+        ('Then',
+            {
+                'description': '',
+                'fields': [('then', 'then_value')]
+            }
+        ),
+        ('Match',
+            {
+                'description': '',
+                'fields': ['source', 'destination']
+            }
+        ),
     ]
     inlines = [ProtocolInline, PortInline, PacketLengthInline, DSCPInline, ICMPInline, TCPFlagInline, FragmentInline]
 
