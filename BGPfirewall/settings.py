@@ -128,6 +128,8 @@ INSTALLED_APPS = (
     'neighbor',
     'flow',
     'multiselectfield',
+    'djcelery', # Django-celery
+    'kombu.transport.django',
 )
 
 SESSION_SERIALIZER = 'django.contrib.sessions.serializers.JSONSerializer'
@@ -140,6 +142,12 @@ SESSION_SERIALIZER = 'django.contrib.sessions.serializers.JSONSerializer'
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'formatters': {
+        'BGPFirewall': {
+            'format' : "[%(asctime)s] [BGPfirewall] %(message)s",
+            'datefmt' : "%d/%b/%Y %H:%M:%S"
+        },
+    },
     'filters': {
         'require_debug_false': {
             '()': 'django.utils.log.RequireDebugFalse'
@@ -150,7 +158,13 @@ LOGGING = {
             'level': 'ERROR',
             'filters': ['require_debug_false'],
             'class': 'django.utils.log.AdminEmailHandler'
-        }
+        },
+        'BGPFirewall': {
+            'level': 'INFO',
+            'filters': [],
+            'class': 'logging.StreamHandler',
+            'formatter': 'BGPFirewall'
+        },
     },
     'loggers': {
         'django.request': {
@@ -158,5 +172,18 @@ LOGGING = {
             'level': 'ERROR',
             'propagate': True,
         },
+        'BGPFirewall': {
+            'handlers': ['BGPFirewall'],
+            'level': 'INFO',
+            'propagate': True,
+        },
     }
 }
+
+# Celery with django DB broker
+import djcelery
+djcelery.setup_loader()
+
+BROKER_URL = 'django://'
+CELERY_RESULT_BACKEND = 'amqp://'
+CELERY_DISABLE_RATE_LIMITS = True

@@ -8,7 +8,6 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from django.forms import ValidationError
 
-import bgpspeaker
 import ipaddr
 import datetime
 import logging
@@ -57,10 +56,8 @@ class Flow(models.Model):
 
     """This class represents a BGP flow specification (RFC 5575)."""
 
-    name         = models.CharField(max_length=50)
+    name         = models.CharField(max_length=50, unique=True)
     description  = models.TextField(blank=True, null=True)
-
-    #applier      = models.ForeignKey(User, editable=False)
 
     filed        = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
@@ -79,26 +76,6 @@ class Flow(models.Model):
     def __unicode__(self):
         return self.name
 
-    def update_flow(self, withdraw=False):
-        """
-        Constructs parameter of BGP update to send and
-        send them to bgpspeaker.
-        """
-        then = self.then
-        if(self.then == Then.TRAFFICRATE or
-           self.then == Then.REDIRECT or
-           self.then == Then.TRAFFICMARKING):
-            then += ' ' + str(self.then_value)
-        logger.info('Send flow informations to the BGP speaker.')
-        return bgpspeaker.update_flow(self.route(), self.match(), then, withdraw)
-
-    def route(self):
-        """Return a dictionary representing the route."""
-        route = {}
-        route['name'] = self.name
-        route['description'] = self.description
-        return route
-
     def match(self):
         """Return a dictionary including match components."""
         match = {}
@@ -116,24 +93,8 @@ class Flow(models.Model):
         match['fragment']         = [f.fragment for f in self.fragment_set.all()]
         return match
 
-    def save(self, *args, **kwargs):
-        if self.active:
-            if self.status == Route.INACTIVE or self.status == Route.ERROR:
-                # If we want to active the flow
-                if self.update_flow() == 0:
-                    # update_flow() exit code 0
-                    self.status = Route.ACTIVE
-                else:
-                    # update_flow() exit code -1
-                    self.status = Route.ERROR
-        else:
-            if self.status == Route.ACTIVE or self.status == Route.ERROR:
-                # If we want to desactive the flow
-                if self.update_flow(withdraw=True) == 0:
-                    self.status = Route.INACTIVE
-                else:
-                    self.status = Route.ERROR
-        super(Flow, self).save(*args, **kwargs)
+    # def save(self, *args, **kwargs):
+    #     super(Flow, self).save(*args, **kwargs)
 
     def has_expired(self):
         print timezone.now()

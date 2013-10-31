@@ -42,11 +42,15 @@ class FlowForm(forms.ModelForm):
                     'Invalid network address format for destination component')
             return str(address)
 
-    def clean_then_value(self):
-        if(self.cleaned_data['then'] == Then.TRAFFICRATE or
-           self.cleaned_data['then'] == Then.REDIRECT or
-           self.cleaned_data['then'] == Then.TRAFFICMARKING):
-            if(not self.cleaned_data['then_value']):
-                raise forms.ValidationError('A value is required')
-        else:
-            self.cleaned_data['then_value'] == ''
+    def clean(self):
+        cleaned_data = super(FlowForm, self).clean()
+        then = cleaned_data.get("then")
+
+        if then:
+            if(then == Then.TRAFFICRATE or then == Then.REDIRECT or
+               then == Then.TRAFFICMARKING):
+                if(not cleaned_data['then_value']):
+                    raise forms.ValidationError('A value is required')
+            else:
+                cleaned_data['then_value'] == ''
+        return cleaned_data

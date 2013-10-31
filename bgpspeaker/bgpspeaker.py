@@ -6,7 +6,7 @@ Author: Quentin Loos <contact@quentinloos.be>
 
 import exasocket
 import logging
-logger = logging.getLogger('bgpspeaker')
+logger = logging.getLogger('BGPFirewall')
 
 def list_as_string(list):
     """
@@ -21,7 +21,7 @@ def list_as_string(list):
     return string + ']'
 
 
-def update_flow(route, match, then, withdraw=False):
+def update_flow(match, then, withdraw=False):
     """
     Sends a BGP update containing flow rule with specified params
     to the bgpspeaker.
@@ -53,5 +53,5 @@ def update_flow(route, match, then, withdraw=False):
 
     announce = announce.replace('\n', '\\n')
 
-    logger.info('send configuration to the socket :\n' + announce)
+    logger.info('Send configuration to the socket :\n' + announce)
     return exasocket.send(announce)

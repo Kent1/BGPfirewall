@@ -1,6 +1,9 @@
 from django.contrib import admin
 from flow.models import *
 from flow.forms import FlowForm
+from flow import tasks
+import logging
+logger = logging.getLogger('BGPFirewall')
 
 
 class ProtocolInline(admin.StackedInline):
@@ -69,5 +72,30 @@ class FlowAdmin(admin.ModelAdmin):
         ),
     ]
     inlines = [ProtocolInline, PortInline, PacketLengthInline, DSCPInline, ICMPInline, TCPFlagInline, FragmentInline]
+
+    def save_model(self, request, obj, form, change):
+        obj.save()
+        then = obj.then
+        if obj.then_value:
+            then +=' ' + obj.then_value
+        if obj.active:
+            if obj.status == Route.INACTIVE or obj.status == Route.ERROR:
+                # If we want to active the flow
+                obj.status = Route.PENDING
+                obj.save(update_fields=['status'])
+                logger.info('Announce flow ' + obj.name)
+                tasks.announce.apply_async((obj, obj.match(), then), countdown=3)
+        else:
+            if obj.status == Route.ACTIVE or obj.status == Route.ERROR:
+                # If we want to desactive the flow
+                obj.status = Route.PENDING
+                obj.save(update_fields=['status'])
+                logger.info('Withdraw flow ' + obj.name)
+                tasks.withdraw.apply_async((obj, obj.match(), then), countdown=3)
+
+    def delete_model(self, request, obj):
+        if obj.active:
+            tasks.withdraw.apply_async((obj, obj.match(), then), countdown=3)
+        obj.save()
 
 admin.site.register(Flow, FlowAdmin)
