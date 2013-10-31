@@ -5,6 +5,7 @@ Author: Quentin Loos <contact@quentinloos.be>
 """
 import ipaddr
 from django import forms
+from flow.models import Then
 
 from flow.models import *
 
@@ -40,3 +41,12 @@ class FlowForm(forms.ModelForm):
                 raise forms.ValidationError(
                     'Invalid network address format for destination component')
             return str(address)
+
+    def clean_then_value(self):
+        if(self.cleaned_data['then'] == Then.TRAFFICRATE or
+           self.cleaned_data['then'] == Then.REDIRECT or
+           self.cleaned_data['then'] == Then.TRAFFICMARKING):
+            if(not self.cleaned_data['then_value']):
+                raise forms.ValidationError('A value is required')
+        else:
+            self.cleaned_data['then_value'] == ''
