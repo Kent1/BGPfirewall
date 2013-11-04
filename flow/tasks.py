@@ -1,6 +1,7 @@
 from celery import task
 from celery.utils.log import get_task_logger
-from flow.models import Route
+from celery import chain
+from flow.models import Flow, Route
 import logging
 logger = logging.getLogger('BGPFirewall')
 
@@ -18,7 +19,7 @@ def announce(flow, match, then):
     except ValueError, e:
         logger.error('Error ' + e)
         flow.status = Route.ERROR
-        raise announce.retry(exc=e)
+        raise announce.retry(exc=e, countdown=10)
     finally:
         flow.save(update_fields=['status'])
 
@@ -34,6 +35,28 @@ def withdraw(flow, match, then):
     except ValueError, e:
         logger.error('Error ' + e)
         flow.status = Route.ERROR
-        raise announce.retry(exc=e)
+        raise announce.retry(exc=e, countdown=10)
+    finally:
+        flow.save(update_fields=['status'])
+
+def modify(oldflow, newflow):
+    #group(withdraw.s(oldflow), announce.s(newflow))()
+    chain(withdraw.si(oldflow, oldflow.match(), oldflow.then()), announce.si(newflow, newflow.match(), newflow.then()))()
+
+@task(max_retries=3)
+def expire(flow, match, then):
+    """
+    Asynchronous task. It transmit information to the bgpspeaker
+    who sends withdraw route command via a socket.
+    """
+    if not flow.has_expired():
+        return
+    try:
+        bgpspeaker.update_flow(match, then, withdraw=True)
+        flow.status = Route.EXPIRED
+    except ValueError, e:
+        logger.error('Error ' + e)
+        flow.status = Route.ERROR
+        raise announce.retry(exc=e, countdown=10)
     finally:
         flow.save(update_fields=['status'])

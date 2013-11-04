@@ -40,7 +40,7 @@ def update_flow(match, then, withdraw=False):
 
     for key, value in match.items():
         if value:
-            if isinstance(value, str):
+            if isinstance(value, str) or isinstance(value, unicode):
                 announce += '%s %s;\n' % (key, value)
             elif len(value) == 1:
                 announce += '%s %s;\n' % (key, value[0])

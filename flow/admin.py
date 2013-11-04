@@ -4,6 +4,7 @@ from flow.forms import FlowForm
 from flow import tasks
 import logging
 logger = logging.getLogger('BGPFirewall')
+import celery
 
 
 class ProtocolInline(admin.StackedInline):
@@ -61,7 +62,7 @@ class FlowAdmin(admin.ModelAdmin):
         ('Then',
             {
                 'description': '',
-                'fields': [('then', 'then_value')]
+                'fields': [('then_action', 'then_value')]
             }
         ),
         ('Match',
@@ -74,28 +75,42 @@ class FlowAdmin(admin.ModelAdmin):
     inlines = [ProtocolInline, PortInline, PacketLengthInline, DSCPInline, ICMPInline, TCPFlagInline, FragmentInline]
 
     def save_model(self, request, obj, form, change):
-        obj.save()
-        then = obj.then
-        if obj.then_value:
-            then +=' ' + obj.then_value
-        if obj.active:
-            if obj.status == Route.INACTIVE or obj.status == Route.ERROR:
-                # If we want to active the flow
-                obj.status = Route.PENDING
-                obj.save(update_fields=['status'])
-                logger.info('Announce flow ' + obj.name)
-                tasks.announce.apply_async((obj, obj.match(), then), countdown=3)
+
+        if change:
+            oldflow = Flow.objects.get(pk=obj.pk)
+        super(FlowAdmin, self).save_model(request, obj, form, change)
+
+        if change:
+            # Modify existing flow
+            if obj.status in (Route.ACTIVE,):
+                # The flow was activated
+                if obj.active:
+                    # Modify it
+                    tasks.modify(oldflow, obj)
+                    obj.status = Route.PENDING
+                else:
+                    # Withdraw it
+                    tasks.withdraw.delay(oldflow, oldflow.match(), oldflow.then())
+                    obj.status = Route.PENDING
+            elif obj.status in (Route.INACTIVE,):
+                # If the flow was not activated
+                if obj.active:
+                    # And we want to activate it
+                    tasks.announce.delay(obj, obj.match(), obj.then())
+                    obj.status = Route.PENDING
+
         else:
-            if obj.status == Route.ACTIVE or obj.status == Route.ERROR:
-                # If we want to desactive the flow
+            # Create new flow
+            if obj.active:
+                # Announce it
+                tasks.announce.delay(obj, obj.match(), obj.then())
                 obj.status = Route.PENDING
-                obj.save(update_fields=['status'])
-                logger.info('Withdraw flow ' + obj.name)
-                tasks.withdraw.apply_async((obj, obj.match(), then), countdown=3)
+
+        # Add withdraw task.
 
     def delete_model(self, request, obj):
-        if obj.active:
-            tasks.withdraw.apply_async((obj, obj.match(), then), countdown=3)
-        obj.save()
+        if obj.status != Route.INACTIVE:
+            tasks.withdraw.delay(obj, obj.match(), obj.then())
+        super(FlowAdmin, self).delete_model(request, obj)
 
 admin.site.register(Flow, FlowAdmin)

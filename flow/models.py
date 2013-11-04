@@ -70,7 +70,7 @@ class Flow(models.Model):
     source      = models.CharField("Source IP Address",  max_length=43, blank=True, null=True)
 
     # Then
-    then         = models.CharField(max_length=30, choices=Then.ACTIONS)
+    then_action  = models.CharField(max_length=30, choices=Then.ACTIONS)
     then_value   = models.IntegerField(blank=True, null=True)
 
     def __unicode__(self):
@@ -93,11 +93,16 @@ class Flow(models.Model):
         match['fragment']         = [f.fragment for f in self.fragment_set.all()]
         return match
 
+    def then(self):
+        result = self.then_action
+        if self.then_value:
+            result += ' ' + str(self.then_value)
+        return result
+
     # def save(self, *args, **kwargs):
     #     super(Flow, self).save(*args, **kwargs)
 
     def has_expired(self):
-        print timezone.now()
         if self.expires < timezone.now():
             return True
         return False

@@ -44,11 +44,12 @@ class FlowForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super(FlowForm, self).clean()
-        then = cleaned_data.get("then")
+        then_action = cleaned_data.get("then_action")
 
-        if then:
-            if(then == Then.TRAFFICRATE or then == Then.REDIRECT or
-               then == Then.TRAFFICMARKING):
+        if then_action:
+            if(then_action == Then.TRAFFICRATE or
+               then_action == Then.REDIRECT or
+               then_action == Then.TRAFFICMARKING):
                 if(not cleaned_data['then_value']):
                     raise forms.ValidationError('A value is required')
             else:
