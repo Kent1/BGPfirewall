@@ -3,10 +3,12 @@ Functions generating commands for ExaBGP and pass them to the socket.
 
 Author: Quentin Loos <contact@quentinloos.be>
 """
-
-import exasocket
+# Python import
 import logging
 logger = logging.getLogger('BGPFirewall')
+
+# My import
+import exasocket
 
 def list_as_string(list):
     """

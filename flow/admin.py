@@ -1,10 +1,16 @@
+# Python import
+import celery
+import logging
+logger = logging.getLogger('BGPFirewall')
+
+# Django import
 from django.contrib import admin
+
+# My import
 from flow.models import *
 from flow.forms import FlowForm
 from flow import tasks
-import logging
-logger = logging.getLogger('BGPFirewall')
-import celery
+from flow import signals
 
 
 class ProtocolInline(admin.StackedInline):
@@ -74,43 +80,10 @@ class FlowAdmin(admin.ModelAdmin):
     ]
     inlines = [ProtocolInline, PortInline, PacketLengthInline, DSCPInline, ICMPInline, TCPFlagInline, FragmentInline]
 
-    def save_model(self, request, obj, form, change):
+    # def save_model(self, request, obj, form, change):
+    #     super(FlowAdmin, self).save_model(request, obj, form, change)
 
-        if change:
-            oldflow = Flow.objects.get(pk=obj.pk)
-        super(FlowAdmin, self).save_model(request, obj, form, change)
-
-        if change:
-            # Modify existing flow
-            if obj.status in (Route.ACTIVE,):
-                # The flow was activated
-                if obj.active:
-                    # Modify it
-                    tasks.modify(oldflow, obj)
-                    obj.status = Route.PENDING
-                else:
-                    # Withdraw it
-                    tasks.withdraw.delay(oldflow, oldflow.match(), oldflow.then())
-                    obj.status = Route.PENDING
-            elif obj.status in (Route.INACTIVE,):
-                # If the flow was not activated
-                if obj.active:
-                    # And we want to activate it
-                    tasks.announce.delay(obj, obj.match(), obj.then())
-                    obj.status = Route.PENDING
-
-        else:
-            # Create new flow
-            if obj.active:
-                # Announce it
-                tasks.announce.delay(obj, obj.match(), obj.then())
-                obj.status = Route.PENDING
-
-        # Add withdraw task.
-
-    def delete_model(self, request, obj):
-        if obj.status != Route.INACTIVE:
-            tasks.withdraw.delay(obj, obj.match(), obj.then())
-        super(FlowAdmin, self).delete_model(request, obj)
+    # def delete_model(self, request, obj):
+    #     super(FlowAdmin, self).delete_model(request, obj)
 
 admin.site.register(Flow, FlowAdmin)

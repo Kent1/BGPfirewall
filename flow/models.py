@@ -3,15 +3,19 @@ Flow rule models
 
 Author: Quentin Loos <contact@quentinloos.be>
 """
+# Python import
+import ipaddr
+import datetime
+import logging
+logger = logging.getLogger('bgpspeaker')
+
+# Django import
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 from django.forms import ValidationError
 
-import ipaddr
-import datetime
-import logging
-logger = logging.getLogger('bgpspeaker')
+# My import
 
 
 class Route(object):
@@ -99,8 +103,8 @@ class Flow(models.Model):
             result += ' ' + str(self.then_value)
         return result
 
-    # def save(self, *args, **kwargs):
-    #     super(Flow, self).save(*args, **kwargs)
+    def save(self, *args, **kwargs):
+        super(Flow, self).save(*args, **kwargs)
 
     def has_expired(self):
         if self.expires < timezone.now():

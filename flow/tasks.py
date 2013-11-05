@@ -1,20 +1,25 @@
+# Python import
 from celery import task
 from celery.utils.log import get_task_logger
 from celery import chain
-from flow.models import Flow, Route
 import logging
 logger = logging.getLogger('BGPFirewall')
 
+# Django import
+from flow.models import Route
+
+# My import
 import bgpspeaker
 
+
 @task(max_retries=3)
-def announce(flow, match, then):
+def announce(flow):
     """
     Asynchronous task. It transmit information to the bgpspeaker
     who sends announce route command via a socket.
     """
     try:
-        bgpspeaker.update_flow(match, then)
+        bgpspeaker.update_flow(flow.match(), flow.then())
         flow.status = Route.ACTIVE
     except ValueError, e:
         logger.error('Error ' + e)

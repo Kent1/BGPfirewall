@@ -3,7 +3,6 @@ Unix socket to communicate with ExaBGP.
 
 Author: Quentin Loos <contact@quentinloos.be>
 """
-
 import socket
 import logging
 logger = logging.getLogger('BGPFirewall')

@@ -6,6 +6,7 @@ Author: Quentin Loos <contact@quentinloos.be>
 from django.conf.urls import patterns, url
 
 from flow import views
+from flow import signals
 
 urlpatterns = patterns('',
     # ex: /flow/

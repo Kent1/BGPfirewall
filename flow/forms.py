@@ -3,10 +3,13 @@ Forms of Flows
 
 Author: Quentin Loos <contact@quentinloos.be>
 """
+# Python import
 import ipaddr
-from django import forms
-from flow.models import Then
 
+# Django import
+from django import forms
+
+# My import
 from flow.models import *
 
 
