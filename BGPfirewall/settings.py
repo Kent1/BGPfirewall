@@ -186,4 +186,15 @@ djcelery.setup_loader()
 
 BROKER_URL = 'django://'
 CELERY_RESULT_BACKEND = 'amqp://'
+CELERY_IGNORE_RESULT = True
 CELERY_DISABLE_RATE_LIMITS = True
+# # http://docs.celeryproject.org/en/latest/userguide/periodic-tasks.html#crontab-schedules
+# from celery.schedules import crontab
+# CELERYBEAT_SCHEDULE = {
+#     # Executes every Monday morning at 7:30 A.M
+#     'add-every-monday-morning': {
+#         'task': 'tasks.add',
+#         'schedule': crontab(hour=7, minute=30, day_of_week=1),
+#         'args': (16, 16),
+#     },
+# }
