@@ -35,6 +35,7 @@ class FlowForm(forms.ModelForm):
                 raise forms.ValidationError(
                     'Invalid network address format for source component')
             return str(address)
+        return self.cleaned_data['source']
 
     def clean_destination(self):
         if self.cleaned_data['destination']:
@@ -44,6 +45,12 @@ class FlowForm(forms.ModelForm):
                 raise forms.ValidationError(
                     'Invalid network address format for destination component')
             return str(address)
+        return self.cleaned_data['destination']
+
+    def clean_expires(self):
+        if self.cleaned_data['expires'] < timezone.now():
+            raise forms.ValidationError('Expires datetime must be in the future.')
+        return self.cleaned_data['expires']
 
     def clean(self):
         cleaned_data = super(FlowForm, self).clean()
