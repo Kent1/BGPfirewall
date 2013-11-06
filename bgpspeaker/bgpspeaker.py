@@ -1,5 +1,5 @@
 """
-Functions generating commands for ExaBGP and pass them to the socket.
+A set of functions to generate commands for ExaBGP and pass them to the socket.
 
 Author: Quentin Loos <contact@quentinloos.be>
 """
@@ -10,11 +10,12 @@ logger = logging.getLogger('BGPFirewall')
 # My import
 import exasocket
 
-def list_as_string(list):
+
+def _list_as_string(list):
     """
     Given a list, return a string representation of it
 
-    >>> list_as_string(['22', '80'])
+    >>> _list_as_string(['22', '80'])
     [ 22 80 ]
     """
     string = '[ '
@@ -28,17 +29,15 @@ def update_flow(match, then, withdraw=False):
     Sends a BGP update containing flow rule with specified params
     to the bgpspeaker.
 
-    :param route: dictionnary with route parameters.
-    :param match: dictionnary with match components.
-    :param then: string representing the then action.
-    :param withdraw: Is the flow should be withdrawn ?
+    :param dict match: dictionnary with match components.
+    :param str then: string representing the then action.
+    :param bool withdraw: Is the flow should be withdrawn ?
     """
-    announce = ''
     if withdraw:
         announce = 'withdraw'
     else:
         announce = 'announce'
-    announce +=  ' flow route {\nmatch {\n'
+    announce += ' flow route {\nmatch {\n'
 
     for key, value in match.items():
         if value:
@@ -47,7 +46,7 @@ def update_flow(match, then, withdraw=False):
             elif len(value) == 1:
                 announce += '%s %s;\n' % (key, value[0])
             else:
-                announce += '%s %s;\n' % (key, list_as_string(value))
+                announce += '%s %s;\n' % (key, _list_as_string(value))
 
     announce += '}\nthen {\n'
     announce += then

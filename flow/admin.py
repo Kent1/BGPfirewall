@@ -1,3 +1,8 @@
+"""
+Admin site for flows
+
+Author: Quentin Loos <contact@quentinloos.be>
+"""
 # Python import
 import celery
 import logging
@@ -54,6 +59,7 @@ class FragmentInline(admin.StackedInline):
     model = Fragment
     extra = 1
 
+
 class FlowAdmin(admin.ModelAdmin):
 
     form = FlowForm
@@ -78,6 +84,7 @@ class FlowAdmin(admin.ModelAdmin):
             }
         ),
     ]
-    inlines = [ProtocolInline, PortInline, PacketLengthInline, DSCPInline, ICMPInline, TCPFlagInline, FragmentInline]
+    inlines = [ProtocolInline, PortInline, PacketLengthInline,
+               DSCPInline, ICMPInline, TCPFlagInline, FragmentInline]
 
 admin.site.register(Flow, FlowAdmin)

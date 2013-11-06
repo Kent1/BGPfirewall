@@ -1,3 +1,8 @@
+"""
+Celery tasks functions.
+
+Author: Quentin Loos <contact@quentinloos.be>
+"""
 # Python import
 from celery import task
 from celery.utils.log import get_task_logger
@@ -34,6 +39,7 @@ def withdraw(flow, match, then):
     """
     Asynchronous task. It transmit information to the bgpspeaker
     who sends withdraw route command via a socket.
+    Disables the flow and set its status to INACTIVE.
     """
     try:
         bgpspeaker.update_flow(match, then, withdraw=True)
@@ -50,7 +56,8 @@ def delete(flow, match, then):
     """
     Asynchronous task. It transmit information to the bgpspeaker
     who sends withdraw route command via a socket.
-    This function doesn't update status fields, compared to withdraw task.
+    This function doesn't update status fields, compared to withdraw task,
+    because the flow is removed from the db.
     """
     try:
         bgpspeaker.update_flow(match, then, withdraw=True)
@@ -65,7 +72,7 @@ def expire(flow):
     """
     Asynchronous task. It transmit information to the bgpspeaker
     who sends withdraw route command via a socket.
-    This function set status field to EXPIRED
+    This function set status field to EXPIRED.
     """
     if not flow.has_expired():
         return

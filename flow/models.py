@@ -20,6 +20,8 @@ from django.forms import ValidationError
 
 class Route(object):
 
+    """Constants used to indicate the status of the flow."""
+
     ACTIVE   = 1
     ERROR    = 2
     EXPIRED  = 3
@@ -36,6 +38,8 @@ class Route(object):
 
 
 class Then(object):
+
+    """Choices set of then action."""
 
     TRAFFICRATE    = "rate-limit"
     DISCARD        = "discard"
@@ -65,13 +69,17 @@ class Flow(models.Model):
 
     filed        = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
-    status       = models.IntegerField(choices=Route.STATUS, default=Route.INACTIVE)
+    status       = models.IntegerField(choices=Route.STATUS,
+                                       default=Route.INACTIVE)
     active       = models.BooleanField(default=False)
-    expires      = models.DateTimeField(default=timezone.now() + datetime.timedelta(days=1))
+    expires      = models.DateTimeField(
+                    default=timezone.now() + datetime.timedelta(days=1))
 
     # Match
-    destination = models.CharField("Destination IP Address", max_length=43, blank=True, null=True)
-    source      = models.CharField("Source IP Address",  max_length=43, blank=True, null=True)
+    destination = models.CharField(
+        "Destination IP Address",max_length=43, blank=True, null=True)
+    source      = models.CharField(
+        "Source IP Address",  max_length=43, blank=True, null=True)
 
     # Then
     then_action  = models.CharField(max_length=30, choices=Then.ACTIONS)
@@ -98,15 +106,14 @@ class Flow(models.Model):
         return match
 
     def then(self):
+        """Return a string with then_action and then_value."""
         result = self.then_action
         if self.then_value:
             result += ' ' + str(self.then_value)
         return result
 
-    def save(self, *args, **kwargs):
-        super(Flow, self).save(*args, **kwargs)
-
     def has_expired(self):
+        """Return True if the flow has expired."""
         if self.expires < timezone.now():
             return True
         return False
@@ -143,7 +150,8 @@ class Protocol(models.Model):
 class Port(models.Model):
 
     """Port model.
-    You can specify if it is the source port, the destination port or both.
+    You can specify for a port number if it is the source port,
+    the destination port or both.
     """
 
     SRC  = "source-port"
@@ -158,13 +166,16 @@ class Port(models.Model):
 
     flow        = models.ForeignKey(Flow)
     port_number = models.CharField(max_length=50)
-    direction   = models.CharField(max_length=50, choices=DIRECTION, default=BOTH)
+    direction   = models.CharField(max_length=50,
+                                   choices=DIRECTION, default=BOTH)
 
     def __unicode__(self):
         return '%s' % self.port_number
 
 
 class PacketLength(models.Model):
+
+    """Packet length model."""
 
     flow          = models.ForeignKey(Flow)
     packet_length = models.CharField(max_length=65536)
@@ -174,6 +185,8 @@ class PacketLength(models.Model):
 
 
 class DSCP(models.Model):
+
+    """DSCP model."""
 
     flow  = models.ForeignKey(Flow)
     dscp  = models.CharField("DSCP", max_length=64)
@@ -208,7 +221,8 @@ class ICMP(models.Model):
     )
 
     flow      = models.ForeignKey(Flow)
-    icmp_type = models.IntegerField("ICMP Type", max_length=255, choices=ICMP_TYPES)
+    icmp_type = models.IntegerField("ICMP Type",
+                                    max_length=255, choices=ICMP_TYPES)
     icmp_code = models.SmallIntegerField("ICMP Code", max_length=255)
 
     def __unicode__(self):
@@ -220,15 +234,7 @@ class ICMP(models.Model):
 
 class TCPFlag(models.Model):
 
-    """TCP flag like SYN or ACK.
-
-        0   1   2   3   4   5   6   7   8   9   10  11  12  13  14  15
-      +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+
-      |               |                       | U | A | P | R | S | F |
-      | Header Length |        Reserved       | R | C | S | S | Y | I |
-      |               |                       | G | K | H | T | N | N |
-      +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+
-    """
+    """TCP flag like SYN or ACK."""
 
     TCP_FLAGS = (
         (1, "FIN"),
@@ -240,13 +246,16 @@ class TCPFlag(models.Model):
     )
 
     flow     = models.ForeignKey(Flow)
-    tcp_flag = models.SmallIntegerField("TCP Flag", max_length=32, choices=TCP_FLAGS)
+    tcp_flag = models.SmallIntegerField("TCP Flag",
+                                        max_length=32, choices=TCP_FLAGS)
 
     def __unicode__(self):
         return self.get_tcp_flag_display()
 
 
 class Fragment(models.Model):
+
+    """Fragment type model."""
 
     DONTFRAGMENT  = 1
     ISAFRAGMENT   = 2
