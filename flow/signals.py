@@ -9,6 +9,8 @@ from flow import tasks
 
 @receiver(signals.pre_save, sender=Flow)
 def presave(sender, instance, **kwargs):
+    instance.status = Route.PENDING
+
     if not instance.pk:
         return
 
@@ -20,7 +22,6 @@ def presave(sender, instance, **kwargs):
         # The flow was activated
         # Withdraw it
         tasks.withdraw.delay(oldflow, oldflow.match(), oldflow.then())
-        instance.status = Route.PENDING
 
 @receiver(signals.post_save, sender=Flow)
 def postsave(sender, instance, created, **kwargs):
@@ -28,7 +29,6 @@ def postsave(sender, instance, created, **kwargs):
     if instance.active:
         # Announce it
         tasks.announce.delay(instance)
-        instance.status = Route.PENDING
 
     # Add withdraw task.
 
@@ -38,4 +38,4 @@ def postdelete(sender, instance, **kwargs):
     oldflow = Flow.objects.get(pk=instance.pk)
 
     if instance.status != Route.INACTIVE:
-        tasks.withdraw.delay(oldflow, oldflow.match(), oldflow.then())
+        tasks.delete.delay(oldflow, oldflow.match(), oldflow.then())
