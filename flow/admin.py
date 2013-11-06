@@ -80,10 +80,4 @@ class FlowAdmin(admin.ModelAdmin):
     ]
     inlines = [ProtocolInline, PortInline, PacketLengthInline, DSCPInline, ICMPInline, TCPFlagInline, FragmentInline]
 
-    # def save_model(self, request, obj, form, change):
-    #     super(FlowAdmin, self).save_model(request, obj, form, change)
-
-    # def delete_model(self, request, obj):
-    #     super(FlowAdmin, self).delete_model(request, obj)
-
 admin.site.register(Flow, FlowAdmin)

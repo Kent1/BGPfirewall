@@ -17,6 +17,7 @@ def announce(flow):
     """
     Asynchronous task. It transmit information to the bgpspeaker
     who sends announce route command via a socket.
+    Update status of the flow to ACTIVE if there are no error
     """
     try:
         bgpspeaker.update_flow(flow.match(), flow.then())
@@ -49,23 +50,27 @@ def delete(flow, match, then):
     """
     Asynchronous task. It transmit information to the bgpspeaker
     who sends withdraw route command via a socket.
+    This function doesn't update status fields, compared to withdraw task.
     """
     try:
         bgpspeaker.update_flow(match, then, withdraw=True)
     except ValueError, e:
         logger.error('Error ' + e)
+        flow.status = Route.ERROR
+        flow.save()
         raise announce.retry(exc=e, countdown=10)
 
 @task(max_retries=3)
-def expire(flow, match, then):
+def expire(flow):
     """
     Asynchronous task. It transmit information to the bgpspeaker
     who sends withdraw route command via a socket.
+    This function set status field to EXPIRED
     """
     if not flow.has_expired():
         return
     try:
-        bgpspeaker.update_flow(match, then, withdraw=True)
+        bgpspeaker.update_flow(flow.match(), flow.then(), withdraw=True)
         flow.status = Route.EXPIRED
     except ValueError, e:
         logger.error('Error ' + e)

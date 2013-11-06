@@ -1,4 +1,5 @@
 # Django import
+from django.utils import timezone
 from django.db.models import signals
 from django.dispatch import receiver
 
@@ -30,10 +31,12 @@ def postsave(sender, instance, created, **kwargs):
         # Announce it
         tasks.announce.delay(instance)
 
-    # Add withdraw task.
+        # Add withdraw task.
+        tasks.expire.apply_async((instance,),
+            countdown=(instance.expires - timezone.now()).total_seconds())
 
 @receiver(signals.pre_delete, sender=Flow)
-def postdelete(sender, instance, **kwargs):
+def predelete(sender, instance, **kwargs):
     # Existing flow
     oldflow = Flow.objects.get(pk=instance.pk)
 
