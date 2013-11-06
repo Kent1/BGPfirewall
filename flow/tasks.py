@@ -44,9 +44,17 @@ def withdraw(flow, match, then):
     finally:
         flow.save(update_fields=['status'])
 
-def modify(oldflow, newflow):
-    #group(withdraw.s(oldflow), announce.s(newflow))()
-    chain(withdraw.si(oldflow, oldflow.match(), oldflow.then()), announce.si(newflow, newflow.match(), newflow.then()))()
+@task(max_retries=3)
+def delete(flow, match, then):
+    """
+    Asynchronous task. It transmit information to the bgpspeaker
+    who sends withdraw route command via a socket.
+    """
+    try:
+        bgpspeaker.update_flow(match, then, withdraw=True)
+    except ValueError, e:
+        logger.error('Error ' + e)
+        raise announce.retry(exc=e, countdown=10)
 
 @task(max_retries=3)
 def expire(flow, match, then):
