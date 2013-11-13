@@ -103,7 +103,7 @@ class Flow(models.Model):
         match['packet-length']    = [p.packet_length for p in self.packetlength_set.all()]
         match['dscp']             = [d.dscp for d in self.dscp_set.all()]
         match['icmp-type']        = [i.icmp_type for i in self.icmp_set.all()]
-        match['icmp-code']        = [i.icmp_code for i in self.icmp_set.all()]
+        match['icmp-code']        = [i.icmp_code for i in self.icmp_set.all() if i.icmp_code != None]
         match['tcp-flags']        = [t.tcp_flag for t in self.tcpflag_set.all()]
         match['fragment']         = [f.fragment for f in self.fragment_set.all()]
         return match
@@ -226,7 +226,8 @@ class ICMP(models.Model):
     flow      = models.ForeignKey(Flow)
     icmp_type = models.IntegerField("ICMP Type",
                                     max_length=255, choices=ICMP_TYPES)
-    icmp_code = models.SmallIntegerField("ICMP Code", max_length=255)
+    icmp_code = models.SmallIntegerField("ICMP Code", max_length=255,
+                                         blank=True, null=True)
 
     def __unicode__(self):
         if self.icmp_code:
