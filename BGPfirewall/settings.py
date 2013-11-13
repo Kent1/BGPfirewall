@@ -127,7 +127,6 @@ INSTALLED_APPS = (
     # 'django.contrib.admindocs',
     'neighbor',
     'flow',
-    'multiselectfield',
     'djcelery', # Django-celery
     'kombu.transport.django',
 )
