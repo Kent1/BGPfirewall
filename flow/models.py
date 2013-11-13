@@ -41,6 +41,7 @@ class Then(object):
 
     """Choices set of then action."""
 
+    ACCEPT         = "accept"
     TRAFFICRATE    = "rate-limit"
     DISCARD        = "discard"
     SAMPLE         = "action sample"
@@ -50,6 +51,7 @@ class Then(object):
     TRAFFICMARKING = "mark"
 
     ACTIONS = (
+        (ACCEPT, "Accept"),
         (TRAFFICRATE, "Traffic-rate"),
         (DISCARD, "Discard"),
         (SAMPLE, "Sample"),
@@ -82,7 +84,8 @@ class Flow(models.Model):
         "Source IP Address",  max_length=43, blank=True, null=True)
 
     # Then
-    then_action  = models.CharField(max_length=30, choices=Then.ACTIONS)
+    then_action  = models.CharField(max_length=30, choices=Then.ACTIONS,
+                                    default=Then.ACCEPT)
     then_value   = models.IntegerField(blank=True, null=True)
 
     def __unicode__(self):
