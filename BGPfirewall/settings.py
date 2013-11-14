@@ -197,3 +197,4 @@ CELERY_DISABLE_RATE_LIMITS = True
 #         'args': (16, 16),
 #     },
 # }
+TEST_RUNNER = 'djcelery.contrib.test_runner.CeleryTestSuiteRunner'

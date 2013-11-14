@@ -8,14 +8,15 @@ import datetime
 from django.test import TestCase
 from django.utils import timezone
 
-from models import Flow
+from flow.models import Flow
+from flow import tasks
 
 
 class FlowTest(TestCase):
 
     def setUp(self):
         self.flow             = Flow()
-        self.flow.name        = "Test"
+        self.flow.name = "Test"
         self.flow.description = "A test flow"
 
         #self.flow.expires      = timezone.now() + datetime.timedelta(days=1)
@@ -23,7 +24,7 @@ class FlowTest(TestCase):
         self.flow.save()
 
         self.flow.destination = '1.2.3.4/32'
-        self.flow.source      = '4.3.2.1/23'
+        self.flow.source = '4.3.2.1/23'
 
         self.flow.protocol_set.create(protocol=12)
         self.flow.protocol_set.create(protocol=123)
@@ -43,7 +44,7 @@ class FlowTest(TestCase):
 
         self.flow.fragment_set.create(fragment=8)
 
-        self.flow.active      = True
+        self.flow.active = True
         self.flow.save()
 
     def test_init(self):
@@ -72,3 +73,56 @@ class FlowTest(TestCase):
     def test_then(self):
         then = self.flow.then()
         self.assertEquals(then, 'accept')
+
+
+class TaskTest(TestCase):
+
+    def setUp(self):
+        self.flow = Flow()
+
+        self.flow.name = "Test"
+        self.flow.description = "A test flow"
+
+        #self.flow.expires      = timezone.now() + datetime.timedelta(days=1)
+
+        self.flow.save()
+
+        self.flow.destination = '1.2.3.4/32'
+        self.flow.source = '4.3.2.1/23'
+
+        self.flow.protocol_set.create(protocol=12)
+        self.flow.protocol_set.create(protocol=123)
+
+        self.flow.port_set.create(port_number=23)
+        self.flow.port_set.create(port_number=234, direction="source-port")
+
+        self.flow.packetlength_set.create(packet_length=23)
+        self.flow.packetlength_set.create(packet_length='>432')
+
+        self.flow.dscp_set.create(dscp='<2')
+
+        self.flow.icmp_set.create(icmp_type=3, icmp_code=0)
+        self.flow.icmp_set.create(icmp_type=1)
+
+        self.flow.tcpflag_set.create(tcp_flag=2)
+
+        self.flow.fragment_set.create(fragment=8)
+
+        self.flow.active = True
+        self.flow.save()
+
+    def test_announce(self):
+        task = tasks.announce.delay(self.flow)
+        self.assertTrue(task.successful())
+
+    def test_withdraw(self):
+        task = tasks.withdraw.delay(self.flow, self.flow.match, self.flow.then)
+        self.assertTrue(task.successful())
+
+    def test_delete(self):
+        task = tasks.withdraw.delay(self.flow, self.flow.match, self.flow.then)
+        self.assertTrue(task.successful())
+
+    def test_expire(self):
+        task = tasks.withdraw.delay(self.flow, self.flow.match, self.flow.then)
+        self.assertTrue(task.successful())
