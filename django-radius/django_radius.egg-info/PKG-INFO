@@ -1,0 +1,14 @@
+Metadata-Version: 1.1
+Name: django-radius
+Version: 0.1.0
+Summary: Django authentication backend for RADIUS
+Home-page: http://robgolding63.github.com/django-radius/
+Author: Rob Golding
+Author-email: rob@robgolding.com
+License: GPL
+Description: UNKNOWN
+Platform: UNKNOWN
+Classifier: Programming Language :: Python
+Classifier: Framework :: Django
+Classifier: Intended Audience :: Developers
+Classifier: Operating System :: OS Independent

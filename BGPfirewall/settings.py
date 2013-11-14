@@ -26,6 +26,16 @@ DATABASES = {
 # See https://docs.djangoproject.com/en/1.5/ref/settings/#allowed-hosts
 ALLOWED_HOSTS = []
 
+# RADIUS
+RADIUS_SERVER = '10.8.0.8'
+RADIUS_PORT = 1812
+RADIUS_SECRET = ''
+
+AUTHENTICATION_BACKENDS = (
+    'radiusauth.backends.RADIUSBackend',
+    'django.contrib.auth.backends.ModelBackend',
+)
+
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
 # although not all choices may be available on all operating systems.
